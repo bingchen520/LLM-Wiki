@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>合併報表是什麼？｜高會教學簡報</title>
+<style>
+  :root{
+    --paper:#f7f3ea; --paper2:#efe8d8; --ink:#1f2a37; --muted:#6b7280;
+    --rule:#d9cfba; --navy:#1e3a5f; --red:#b3261e; --blue:#1d4ed8;
+    --accent:#c2410c; --green:#2f6b3a; --hl:#fde68a;
+    --serif:"Noto Serif TC","Source Han Serif TC","PMingLiU","Songti TC",serif;
+    --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",sans-serif;
+    --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#2b2a27;overflow:hidden;font-family:var(--sans);color:var(--ink)}
+  #stage{position:absolute;width:1280px;height:720px;left:50%;top:50%;transform-origin:center center}
+  .slide{position:absolute;inset:0;background:var(--paper);padding:56px 72px 64px;display:none;flex-direction:column;
+    background-image:linear-gradient(var(--paper) 0 0),repeating-linear-gradient(transparent 0 35px,rgba(0,0,0,.035) 35px 36px);
+    box-shadow:0 20px 60px rgba(0,0,0,.45)}
+  .slide::before{content:"";position:absolute;left:52px;top:0;bottom:0;width:2px;background:rgba(179,38,30,.35)}
+  .slide.active{display:flex}
+  .kicker{font-size:15px;letter-spacing:.18em;color:var(--accent);font-weight:700;margin-bottom:6px}
+  h1{font-family:var(--serif);font-size:40px;line-height:1.25;color:var(--navy);margin-bottom:22px}
+  h2{font-family:var(--serif);font-size:22px;color:var(--navy);margin-bottom:10px}
+  p,li{font-size:20px;line-height:1.65}
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .foot{position:absolute;left:72px;right:72px;bottom:20px;display:flex;justify-content:space-between;font-size:13px;color:var(--muted);border-top:1px solid var(--rule);padding-top:8px}
+  .foot b{color:var(--navy);font-weight:600}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:start}
+  .card{background:#fffdf7;border:1px solid var(--rule);border-radius:6px;padding:20px 24px}
+  .card.key{border-left:5px solid var(--accent)}
+  table{border-collapse:collapse;width:100%}
+  th,td{border-bottom:1px solid var(--rule);padding:8px 10px;font-size:18px;text-align:left}
+  th{font-size:15px;color:var(--muted);font-weight:600;background:var(--paper2)}
+  .yes{color:var(--green);font-weight:700}
+  .tag{display:inline-block;font-size:14px;padding:2px 8px;border-radius:3px;background:var(--navy);color:#fff;margin-right:6px}
+  .frag{opacity:0;transform:translateY(8px);transition:opacity .35s,transform .35s}
+  .frag.on{opacity:1;transform:none}
+  .big{font-family:var(--serif);font-size:30px;color:var(--navy);line-height:1.5}
+  .hint{font-size:14px;color:var(--muted)}
+  /* title */
+  .title-slide{justify-content:center}
+  .title-slide h1{font-size:58px;margin-bottom:18px}
+  .title-slide .sub{font-size:22px;color:var(--muted)}
+  .stamp{position:absolute;right:90px;top:90px;width:170px;height:170px;border:4px solid var(--red);border-radius:50%;color:var(--red);
+    display:flex;align-items:center;justify-content:center;text-align:center;font-family:var(--serif);font-size:22px;font-weight:700;transform:rotate(-12deg);opacity:.8;line-height:1.3}
+  /* control */
+  .tri{display:flex;gap:20px;margin-top:8px}
+  .tri .card{flex:1;text-align:center}
+  .tri .n{font-family:var(--serif);font-size:44px;color:var(--accent)}
+  /* steps */
+  .steps{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+  .step{display:flex;align-items:center;gap:18px;background:#fffdf7;border:1px solid var(--rule);border-radius:6px;padding:12px 18px}
+  .step .i{flex:none;width:42px;height:42px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:22px}
+  .step b{font-size:21px;min-width:300px}
+  .step span{font-size:17px;color:var(--muted)}
+  /* goodwill bars */
+  .bars{display:flex;flex-direction:column;gap:18px;margin-top:10px}
+  .bar{display:flex;align-items:center;gap:14px}
+  .bar .lab{width:260px;font-size:18px;text-align:right}
+  .bar .fill{white-space:nowrap;height:46px;border-radius:3px;display:flex;align-items:center;padding-left:12px;color:#fff;font-family:var(--mono);font-size:18px}
+  /* worksheet */
+  .ws{font-size:15px}
+  .ws th,.ws td{font-size:15px;padding:4px 8px;text-align:right}
+  .ws td:first-child,.ws th:first-child{text-align:left}
+  .ws .dr{color:var(--blue)} .ws .cr{color:var(--red)}
+  .ws tr.total td{font-weight:700;border-top:2px solid var(--ink)}
+  .ws td.c{background:rgba(47,107,58,.08);font-weight:700}
+  .ws tr.lit td{background:var(--hl)}
+  .ws .cell{opacity:0;transition:opacity .3s}
+  .ws .cell.on{opacity:1}
+  .panel{display:flex;flex-direction:column;gap:10px}
+  .panel .frag{font-size:16px;line-height:1.5;padding:10px 14px;border-left:4px solid var(--rule);background:#fffdf7}
+  .panel .frag.cur{border-left-color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+  pre{font-family:var(--mono);font-size:14px;line-height:1.45;color:var(--ink);margin-top:4px;white-space:pre}
+  /* reverse */
+  .share{display:flex;height:54px;border-radius:4px;overflow:hidden;margin:6px 0 4px;font-family:var(--mono);font-size:17px;color:#fff}
+  .share div{white-space:nowrap;display:flex;align-items:center;justify-content:center}
+  /* quiz */
+  .q{background:#fffdf7;border:1px solid var(--rule);border-radius:6px;padding:12px 18px;margin-bottom:10px}
+  .q p{font-size:18px;margin-bottom:6px}
+  .opts{display:flex;gap:10px;flex-wrap:wrap}
+  .opts button{font:inherit;font-size:16px;padding:6px 14px;border:1px solid var(--rule);background:var(--paper);border-radius:4px;cursor:pointer}
+  .opts button:hover{border-color:var(--navy)}
+  .opts button.right{background:var(--green);color:#fff;border-color:var(--green)}
+  .opts button.wrong{background:var(--red);color:#fff;border-color:var(--red)}
+  .why{font-size:15px;color:var(--muted);margin-top:6px;display:none}
+  .why.show{display:block}
+  /* chrome */
+  #bar{position:fixed;left:0;top:0;height:4px;background:var(--accent);transition:width .3s;z-index:5}
+  #nav{position:fixed;right:14px;top:10px;opacity:.55;transition:opacity .2s;display:flex;gap:8px;align-items:center;color:#d6d3cc;font-size:14px;z-index:5}
+  #nav button{background:#3f3d39;color:#f3f0e8;border:0;border-radius:4px;width:38px;height:32px;font-size:16px;cursor:pointer}
+  #nav button:hover{background:#57544e}
+  #nav:hover{opacity:1}
+  .panel .ws-step{font-size:16px;line-height:1.5;padding:10px 14px;border-left:4px solid var(--rule);background:#fffdf7;opacity:0;transform:translateY(8px);transition:opacity .35s,transform .35s}
+  .panel .ws-step.on{opacity:1;transform:none}
+  .panel .ws-step.cur{border-left-color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+  .panel.small{gap:7px}
+  .panel.small .ws-step{font-size:14px;padding:6px 12px;line-height:1.4}
+  .ws2 th,.ws2 td{font-size:13px;padding:2px 6px;line-height:1.35}
+  .road{display:flex;gap:0;margin-top:30px}
+  .road div{flex:1;padding:12px 14px;background:#fffdf7;border:1px solid var(--rule);border-right:0;font-size:17px;position:relative}
+  .road div:last-child{border-right:1px solid var(--rule)}
+  .road div b{display:block;font-family:var(--serif);color:var(--accent);font-size:20px}
+  .road div.ext{background:transparent;border-style:dashed;color:var(--muted)}
+  .phases{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .ph{background:#fffdf7;border:1px solid var(--rule);border-top:5px solid var(--navy);border-radius:6px;padding:12px 14px}
+  .ph .pt{font-family:var(--serif);font-size:20px;color:var(--navy);font-weight:700;margin-bottom:6px}
+  .ph p{font-size:16px;line-height:1.55;margin-bottom:4px}
+  .gloss{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .g{background:#fffdf7;border:1px solid var(--rule);border-left:5px solid var(--navy);border-radius:6px;padding:10px 16px;display:flex;flex-direction:column}
+  .g b{font-family:var(--serif);font-size:20px;color:var(--navy)}
+  .g span{font-size:17px;color:var(--ink)}
+  .note{margin-top:12px;background:#fff7e6;border:1px dashed #e0b25a;border-radius:6px;padding:10px 14px;font-size:17px;line-height:1.6}
+  .ledger{background:#fffdf7;border:1px solid var(--rule);border-radius:6px;padding:14px 20px}
+  .ledger .lh{font-family:var(--serif);font-size:20px;color:var(--navy);border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:6px}
+  .ledger .lr{display:flex;justify-content:space-between;gap:12px;font-size:17px;padding:8px 0;border-bottom:1px solid var(--rule)}
+  .ledger .lr.tot{font-weight:700;border-top:2px solid var(--ink);border-bottom:3px double var(--ink)}
+  .mis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .m{background:#fffdf7;border:1px solid var(--rule);border-radius:6px;padding:9px 14px;display:grid;grid-template-columns:44px 1fr;row-gap:2px;align-items:center}
+  .m i{grid-row:span 2;font-style:normal;font-family:var(--serif);font-weight:700;color:#fff;background:var(--accent);border-radius:4px;text-align:center;font-size:14px;padding:4px 0;margin-right:10px}
+  .m s{font-size:16px;color:var(--red);text-decoration-thickness:1.5px}
+  .m b{font-size:16.5px;color:var(--green)}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="stage">
+
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="stamp">高等會計學<br>Ch1–Ch5</div>
+  <div class="kicker">高會教學簡報</div>
+  <h1>合併報表是什麼？<br>從買下一家公司，到編出一份報表</h1>
+  <p class="sub">給第一次接觸「企業合併」的你：買 → 記帳 → 合併 → 每年怎麼做工作底稿<br><span style="font-size:18px">每一頁都附白話說明和例題；最後有常見錯誤和小測驗</span></p>
+  <div class="road">
+    <div><b>Ch1</b>怎麼買</div><div><b>Ch2</b>母公司怎麼記</div><div><b>Ch3</b>收購日合併</div><div><b>Ch5</b>每年的工作底稿</div><div class="ext"><b>Ch4</b>延伸</div>
+  </div>
+  <p class="hint" style="margin-top:28px">按 → 或空白鍵前進、← 返回｜有些頁面會一步一步出現</p>
+  <div class="foot"><span>知識來源：<b>高會 LLM Wiki</b>（由 5 份上課講義整理）</span><span class="pg"></span></div>
+</section>
+
+<!-- NEW glossary -->
+<section class="slide">
+  <div class="kicker">開始之前 ｜ 名詞小辭典</div>
+  <h1>先認識 8 個會一直出現的名詞</h1>
+  <div class="gloss">
+    <div class="g frag"><b>母公司 / 子公司</b><span>出錢買、買完說了算的那家 / 被買下、被控制的那家</span></div>
+    <div class="g frag"><b>控制</b><span>能決定對方怎麼經營，而且對方賺賠會影響自己</span></div>
+    <div class="g frag"><b>帳面金額</b><span>公司帳上記的數字，通常是當初的成本</span></div>
+    <div class="g frag"><b>公允價值</b><span>「今天拿到市場上賣，賣得到多少錢」</span></div>
+    <div class="g frag"><b>移轉對價</b><span>母公司實際付出去的代價（現金、股票、債券）</span></div>
+    <div class="g frag"><b>商譽</b><span>多付的錢：買到品牌、客戶、團隊等看不到的價值</span></div>
+    <div class="g frag"><b>非控制權益（NCI）</b><span>子公司裡「不是母公司」的其他股東的份</span></div>
+    <div class="g frag"><b>沖銷</b><span>把「自己對自己」的帳互相抵掉</span></div>
+  </div>
+  <p class="hint" style="margin-top:12px">先用白話認識這些名詞，後面每一頁都會用到；正式定義見 Wiki〔名詞小辭典〕</p>
+  <div class="foot"><span>引用 Wiki：<b>名詞小辭典</b>｜講義 Ch1 p.1–7、Ch2 p.1–2、Ch3 p.2</span><span class="pg"></span></div>
+</section>
+
+<!-- 2 Ch1 -->
+<section class="slide">
+  <div class="kicker">Ch1 ｜ 為什麼要合併</div>
+  <h1>法律上是兩家公司，經濟上是一家</h1>
+  <div class="cols" style="grid-template-columns:1.1fr 1fr">
+    <div>
+      <table>
+        <tr><th>合併的法律形式</th><th>合併後</th><th>編合併報表？</th></tr>
+        <tr><td>吸收合併</td><td>A + B → A</td><td>否</td></tr>
+        <tr><td>創設合併</td><td>A + B → C</td><td>否</td></tr>
+        <tr><td>收購資產及營業</td><td>只買資產</td><td>否</td></tr>
+        <tr><td><b>股權收購</b></td><td>A 買 B &gt; 50% 股份</td><td class="yes">是 ✓</td></tr>
+      </table>
+      <p style="margin-top:14px;font-size:18px">股權收購後，兩家仍是獨立的法律個體，但依<b style="color:var(--accent)">「經濟實質重於法律形式」</b>，要合起來編<b>合併財務報表</b>。</p>
+      <div class="note frag"><b>📒 帳上長什麼樣子？</b>平常母公司帳上只有一行「投資子公司」；子公司的現金、存貨、設備都還記在子公司自己的帳上。要到期末，才透過<b>工作底稿</b>把兩家合起來。</div>
+    </div>
+    <div class="card key frag">
+      <h2>判斷關鍵：有沒有「控制」（IFRS 10）</h2>
+      <ol style="margin-left:24px">
+        <li><b>權力</b>：能主導對方的重要活動</li>
+        <li><b>變動報酬</b>：對方賺賠會影響我</li>
+        <li><b>連結</b>：我能用權力影響自己的報酬</li>
+      </ol>
+      <p class="hint" style="margin-top:8px">持股 &gt; 50% 通常有控制，但要看經濟實質，不只看比例</p>
+    </div>
+  </div>
+  <div class="foot"><span>引用 Wiki：<b>企業合併的種類</b>、<b>控制</b>｜講義 Ch1 p.1–2、Ch3 p.1</span><span class="pg"></span></div>
+</section>
+
+<!-- 3 Ch1 -->
+<section class="slide">
+  <div class="kicker">Ch1 ｜ 怎麼買：收購法</div>
+  <h1>所有東西都用「收購日公允價值」衡量</h1>
+  <div class="cols" style="grid-template-columns:1.2fr 1fr">
+    <div class="steps">
+      <div class="step"><div class="i">1</div><b>辨認收購者</b><span>基本題：出錢的一方</span></div>
+      <div class="step"><div class="i">2</div><b>決定收購日</b><span>取得控制的那天</span></div>
+      <div class="step"><div class="i">3</div><b>認列可辨認資產負債</b><span>＋非控制權益</span></div>
+      <div class="step"><div class="i">4</div><b>衡量移轉對價</b><span>現金、股票、債券</span></div>
+      <div class="step"><div class="i">5</div><b>算商譽／廉價購買利益</b><span>付的 − 買到的</span></div>
+    </div>
+    <div class="card key frag">
+      <h2>⚠️ 收購相關成本不算買價</h2>
+      <table style="margin-top:6px">
+        <tr><td>股票發行成本</td><td>減少資本公積</td></tr>
+        <tr><td>債券發行成本</td><td>調整溢折價</td></tr>
+        <tr><td>律師、會計師費、發起人酬勞</td><td>當期費用</td></tr>
+      </table>
+      <p class="hint" style="margin-top:8px">「看未來條件才付」的或有對價，則要算進移轉對價</p>
+    </div>
+  </div>
+  <div class="foot"><span>引用 Wiki：<b>收購法</b>、<b>移轉對價</b>、<b>收購相關成本</b>｜講義 Ch1 p.2–5</span><span class="pg"></span></div>
+</section>
+
+<!-- NEW fair value -->
+<section class="slide">
+  <div class="kicker">Ch1 ｜ 為什麼要強調「公允價值」</div>
+  <h1>帳上的數字 ≠ 現在的價值</h1>
+  <p>收購時，子公司帳上的數字常常和市場價值不一樣。例：泰安公司被泰順收購那天</p>
+  <div class="cols" style="margin-top:12px;grid-template-columns:1.25fr 1fr">
+    <table>
+      <tr><th>項目</th><th>帳面金額</th><th>公允價值</th><th>差異</th></tr>
+      <tr><td>存貨</td><td class="num">250,000</td><td class="num">300,000</td><td class="num" style="color:var(--green)">+50,000</td></tr>
+      <tr><td>設備</td><td class="num">400,000</td><td class="num">370,000</td><td class="num" style="color:var(--red)">−30,000</td></tr>
+      <tr><td>長期負債</td><td class="num">300,000</td><td class="num">280,000</td><td class="num" style="color:var(--green)">負債少 20,000</td></tr>
+      <tr><td>現金、應收帳款</td><td colspan="3">帳面 = 公允價值，沒有差異</td></tr>
+    </table>
+    <div>
+      <div class="card frag"><p style="font-size:18px">🧺 <b>白話</b>：存貨帳上記的是當初的成本，但市價已經漲了；設備實際比帳上更舊、更不值錢。</p></div>
+      <div class="card key frag" style="margin-top:12px"><p style="font-size:18px"><b>這些差異去哪裡？</b><br>收購法要用<b>公允價值</b>認列。和帳面的差距（加上商譽）就是 Ch2 的<b>未攤銷差額</b>，之後存貨賣掉、設備折舊時要跟著攤銷。</p></div>
+    </div>
+  </div>
+  <div class="foot"><span>引用 Wiki：<b>名詞小辭典</b>、<b>合併沖銷原則</b>（泰順公司例題）｜講義 Ch1 p.4、Ch3 p.4</span><span class="pg"></span></div>
+</section>
+
+<!-- 4 Ch1 -->
+<section class="slide">
+  <div class="kicker">Ch1 ｜ 商譽是怎麼來的</div>
+  <h1>付的錢 − 看得到的淨資產 = 商譽</h1>
+  <p>例：信義公司發行 4,000 股（市價 $30）買下和平公司的全部淨資產</p>
+  <div class="bars">
+    <div class="bar"><div class="lab">移轉對價</div><div class="fill num" style="width:720px;background:var(--navy)">4,000 × $30 = $120,000</div></div>
+    <div class="bar frag"><div class="lab">和平可辨認淨資產<br><span class="hint">現金 50k + 其他資產 100k − 負債 55k</span></div><div class="fill num" style="width:570px;background:var(--muted)">$95,000</div>
+      <div class="fill num" style="width:150px;background:var(--accent);margin-left:-14px">商譽 $25,000</div></div>
+  </div>
+  <div class="cols frag" style="margin-top:22px;gap:20px">
+    <div class="card"><p><b>商譽</b>：品牌、客戶、團隊等「看不到」的價值。<b>不攤銷</b>，每年做減損測試。</p></div>
+    <div class="card"><p>付的比淨資產<b>少</b>：重新評估後仍然較少，就是<b>廉價購買利益</b>，列當期損益。</p></div>
+  </div>
+  <div class="foot"><span>引用 Wiki：<b>商譽與廉價購買利益</b>｜講義 Ch1 p.6</span><span class="pg"></span></div>
+</section>
+
+<!-- 5 Ch2 -->
+<section class="slide">
+  <div class="kicker">Ch2 ｜ 買完之後，母公司帳上怎麼記</div>
+  <h1>權益法：子公司賺錢，母公司的投資跟著變</h1>
+  <div class="cols" style="grid-template-columns:1.25fr 1fr">
+    <table>
+      <tr><th></th><th>成本法</th><th>權益法</th></tr>
+      <tr><td>投資帳戶</td><td>維持原始成本</td><td>反映享有的子公司淨資產</td></tr>
+      <tr><td>子公司賺錢</td><td>不認列</td><td>認列<b>投資收益</b>，投資↑</td></tr>
+      <tr><td>子公司發股利</td><td>認列股利收入</td><td>投資帳戶↓</td></tr>
+      <tr><td>概念</td><td>類似現金基礎</td><td>類似應計基礎</td></tr>
+    </table>
+    <div class="card key frag">
+      <h2>為什麼要學權益法？</h2>
+      <p>母公司<b>完整</b>使用權益法時：</p>
+      <p class="big" style="font-size:22px;margin:8px 0">母公司淨利 ＝ 合併報表的控制權益淨利</p>
+      <p>所以權益法又稱「<b>單線合併</b>」。這也是 Ch5 工作底稿第一步要檢查的事。</p>
+    </div>
+  </div>
+  <div class="foot"><span>引用 Wiki：<b>投資會計三方法比較</b>｜講義 Ch2 p.1</span><span class="pg"></span></div>
+</section>
+
+<!-- NEW investment account year -->
+<section class="slide">
+  <div class="kicker">Ch2 ｜ 權益法實際走一次</div>
+  <h1>投資帳戶的一年：瓊安公司買瓊斯 80%</h1>
+  <div class="cols" style="grid-template-columns:1fr 1.1fr">
+    <div class="ledger">
+      <div class="lh">投資瓊斯公司（X3 年）</div>
+      <div class="lr"><span>X3/1/1 買入</span><span class="num">750,000</span></div>
+      <div class="lr frag"><span>＋ 投資收益（瓊斯賺錢，母公司跟著記）</span><span class="num">20,000</span></div>
+      <div class="lr frag"><span>− 股利 80,000 × 80%（等於收回一部分投資）</span><span class="num">(64,000)</span></div>
+      <div class="lr tot frag"><span>X3/12/31 餘額</span><span class="num">706,000</span></div>
+    </div>
+    <div>
+<pre class="card frag" style="font-size:15px">分錄
+X3/1/1   投資瓊斯公司  750,000 / 現金          750,000
+發股利   現金           64,000 / 投資瓊斯公司   64,000
+X3/12/31 投資瓊斯公司   20,000 / 投資收益       20,000</pre>
+      <div class="card key frag" style="margin-top:12px">
+        <p style="font-size:18px">🤔 <b>奇怪？</b>瓊斯 X3 年淨利 100,000，80% 應該是 80,000，為什麼投資收益只有 <b>20,000</b>？</p>
+        <p class="hint" style="margin-top:4px">答案在下一頁：未攤銷差額</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>引用 Wiki：<b>未攤銷差額</b>（瓊安公司例題）、<b>投資會計三方法比較</b>｜講義 Ch2 p.1–3</span><span class="pg"></span></div>
+</section>
+
+<!-- 6 Ch2 -->
+<section class="slide">
+  <div class="kicker">Ch2 ｜ 多付的錢去哪了</div>
+  <h1>未攤銷差額：買貴的部分，要跟著資產慢慢用掉</h1>
+  <div class="cols" style="grid-template-columns:1fr 1fr">
+    <div>
+      <div class="card" style="margin-bottom:12px">
+        <p style="font-size:18px">子公司資產<b>低估</b> → 子公司帳上成本、費用<b>少算</b> → 淨利<b>多算</b> → 投資收益要<b>往下調</b></p>
+      </div>
+      <table>
+        <tr><th>差額項目</th><th>什麼時候攤銷</th></tr>
+        <tr><td>存貨</td><td>賣掉那年一次攤完（銷貨成本）</td></tr>
+        <tr><td>設備、房屋</td><td>依剩餘年限（折舊）</td></tr>
+        <tr><td>土地</td><td>不攤銷，賣掉時一次轉銷</td></tr>
+        <tr><td>商譽</td><td>不攤銷，做減損測試</td></tr>
+      </table>
+    </div>
+    <div class="card key frag">
+      <h2>解答：瓊安的投資收益為什麼是 20,000</h2>
+      <p style="font-size:17px">存貨低估 70,000（當年賣掉）、設備低估 30,000（6 年）→ 當年攤銷 70,000 + 5,000 = <b>75,000</b>；瓊斯淨利 100,000</p>
+<pre style="font-size:15px;margin-top:8px">投資收益 = (100,000 − 75,000) × 80%
+         = 20,000
+
+驗算：投資帳戶 706,000
+    = 股權淨值 656,000
+    + 母公司未攤銷差額 50,000 ✓</pre>
+    </div>
+  </div>
+  <div class="foot"><span>引用 Wiki：<b>未攤銷差額</b>（瓊安公司例題）｜講義 Ch2 p.2–3</span><span class="pg"></span></div>
+</section>
+
+<!-- 7 Ch3 -->
+<section class="slide">
+  <div class="kicker">Ch3 ｜ 合併的核心觀念</div>
+  <h1>內部的互相抵掉，對外的加起來</h1>
+  <div class="cols">
+    <div class="card key">
+      <h2><span class="tag" style="background:var(--red)">沖銷</span>相對科目</h2>
+      <ul style="margin-left:24px">
+        <li>母公司「投資子公司」↔ 子公司「權益」</li>
+        <li>母子公司之間的應收 ↔ 應付</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2><span class="tag" style="background:var(--green)">相加</span>非相對科目</h2>
+      <ul style="margin-left:24px"><li>現金、存貨、設備、對外負債……直接加總</li></ul>
+    </div>
+  </div>
+  <div class="cols frag" style="margin-top:18px;gap:20px">
+    <div class="card"><p>❓ <b>為什麼投資要沖掉？</b><br>子公司的資產負債已經一項一項加進來，「投資子公司」代表的是同一批東西，留著就<b>重複計算</b>。</p></div>
+    <div class="card"><p>❓ <b>為什麼內部應收應付要沖掉？</b><br>把兩家看成一家，母公司欠子公司 $30,000，等於<b>自己欠自己</b>。</p></div>
+  </div>
+  <div class="note frag" style="margin-top:14px">👛 <b>生活比喻</b>：一家人有兩個錢包。爸爸跟媽媽借錢，全家的總財產不會變；要算「全家有多少錢」，就不能把這筆借款算成資產又算成負債。</div>
+  <div class="foot"><span>引用 Wiki：<b>合併沖銷原則</b>｜講義 Ch3 p.2、p.6</span><span class="pg"></span></div>
+</section>
+
+<!-- 8 Ch3 worksheet -->
+<section class="slide ws-slide" data-max="4" style="padding-top:40px">
+  <div class="kicker">Ch3 ｜ 收購日的工作底稿（持股 100%）</div>
+  <h1 style="font-size:30px;margin-bottom:10px">美東公司收購美西公司（X3/1/1）</h1>
+  <div style="display:grid;grid-template-columns:1.55fr 1fr;gap:24px;flex:1">
+    <table class="ws num">
+      <tr><th>科目</th><th>美東</th><th>美西</th><th>借</th><th>貸</th><th>合併</th></tr>
+      <tr><td>現金</td><td>240,000</td><td>150,000</td><td></td><td></td><td class="c"><span class="cell" data-s="4">390,000</span></td></tr>
+      <tr data-r="2 3"><td>應收帳款</td><td>360,000</td><td>300,000</td><td class="dr"><span class="cell" data-s="2">(2) 20,000</span></td><td class="cr"><span class="cell" data-s="3">(3) 30,000</span></td><td class="c"><span class="cell" data-s="4">650,000</span></td></tr>
+      <tr data-r="2"><td>存貨</td><td>400,000</td><td>500,000</td><td></td><td class="cr"><span class="cell" data-s="2">(2) 10,000</span></td><td class="c"><span class="cell" data-s="4">890,000</span></td></tr>
+      <tr data-r="1"><td>投資美西公司</td><td>800,000</td><td></td><td></td><td class="cr"><span class="cell" data-s="1">(1) 800,000</span></td><td class="c"><span class="cell" data-s="4">—</span></td></tr>
+      <tr data-r="2"><td>商譽</td><td></td><td></td><td class="dr"><span class="cell" data-s="2">(2) 40,000</span></td><td></td><td class="c"><span class="cell" data-s="4">40,000</span></td></tr>
+      <tr data-r="1 2"><td>未攤銷差額</td><td></td><td></td><td class="dr"><span class="cell" data-s="1">(1) 50,000</span></td><td class="cr"><span class="cell" data-s="2">(2) 50,000</span></td><td class="c"><span class="cell" data-s="4">—</span></td></tr>
+      <tr class="total"><td>資產總額</td><td>1,800,000</td><td>950,000</td><td></td><td></td><td class="c"><span class="cell" data-s="4">1,970,000</span></td></tr>
+      <tr data-r="3"><td>應付帳款</td><td>200,000</td><td>200,000</td><td class="dr"><span class="cell" data-s="3">(3) 30,000</span></td><td></td><td class="c"><span class="cell" data-s="4">370,000</span></td></tr>
+      <tr><td>應付公司債</td><td>800,000</td><td></td><td></td><td></td><td class="c"><span class="cell" data-s="4">800,000</span></td></tr>
+      <tr data-r="1"><td>普通股股本</td><td>400,000</td><td>500,000</td><td class="dr"><span class="cell" data-s="1">(1) 500,000</span></td><td></td><td class="c"><span class="cell" data-s="4">400,000</span></td></tr>
+      <tr data-r="1"><td>資本公積</td><td>150,000</td><td>100,000</td><td class="dr"><span class="cell" data-s="1">(1) 100,000</span></td><td></td><td class="c"><span class="cell" data-s="4">150,000</span></td></tr>
+      <tr data-r="1"><td>保留盈餘</td><td>250,000</td><td>150,000</td><td class="dr"><span class="cell" data-s="1">(1) 150,000</span></td><td></td><td class="c"><span class="cell" data-s="4">250,000</span></td></tr>
+      <tr class="total"><td>負債及權益總額</td><td>1,800,000</td><td>950,000</td><td></td><td></td><td class="c"><span class="cell" data-s="4">1,970,000</span></td></tr>
+    </table>
+    <div class="panel">
+      <div class="ws-step" data-s="0"><b>題目</b>：美東發行公允價值 $800,000 的公司債，買下美西 100%。美西權益帳面 $750,000；應收帳款低估 $20,000、存貨高估 $10,000；美西有 $30,000 應收美東的帳款。<br><span class="hint">按 → 一步一步做沖銷</span></div>
+      <div class="ws-step" data-s="1"><b>(1) 沖銷投資 vs. 子公司權益</b><br>差額 800,000 − 750,000 = 50,000，先放進「未攤銷差額」</div>
+      <div class="ws-step" data-s="2"><b>(2) 分攤差額</b><br>應收帳款 +20,000、存貨 −10,000，剩下的是商譽 <b>40,000</b></div>
+      <div class="ws-step" data-s="3"><b>(3) 沖銷內部應收應付</b><br>美東欠美西 30,000 → 兩邊都抵掉</div>
+      <div class="ws-step" data-s="4"><b>合併完成 ✓</b> 資產 = 負債及權益 = <b>1,970,000</b><br>📌 合併後的股本、公積、保留盈餘 = <b>美東自己的金額</b></div>
+    </div>
+  </div>
+  <div class="foot"><span>引用 Wiki：<b>合併沖銷原則</b>（美東公司例題）｜講義 Ch3 p.3</span><span class="pg"></span></div>
+</section>
+
+<!-- 9 Ch3 -->
+<section class="slide">
+  <div class="kicker">Ch3 ｜ 持股不到 100% 時</div>
+  <h1>多出一位主角：非控制權益（NCI）</h1>
+  <div class="cols" style="grid-template-columns:1fr 1.1fr">
+    <div>
+      <p>例：泰順公司發行股票（$480,000）買下泰安 <b>80%</b>，另外 20% 的股東就是<b>非控制權益</b>，公允價值 $112,000。</p>
+      <div class="card frag" style="margin-top:14px">
+<pre>  移轉對價              480,000
++ 非控制權益            112,000
+= 592,000
+− 泰安可辨認淨資產公允價值  540,000
+= 商譽                   52,000</pre>
+      </div>
+    </div>
+    <div class="card key frag">
+      <h2>NCI 放在哪裡？</h2>
+      <p>合併資產負債表的<b>權益</b>裡，和母公司權益<b>分開列示</b>。</p>
+<pre style="margin-top:8px">沖銷分錄
+股本－泰安        400,000
+保留盈餘－泰安    100,000
+未攤銷差額         92,000
+    投資泰安公司          480,000
+    非控制權益            112,000</pre>
+      <p class="hint" style="margin-top:8px">之後每一年，NCI 還會分到子公司的淨利（見 Ch5）</p>
+    </div>
+  </div>
+  <div class="foot"><span>引用 Wiki：<b>非控制權益</b>、<b>合併沖銷原則</b>（泰順公司例題）｜講義 Ch1 p.4、Ch3 p.4–6</span><span class="pg"></span></div>
+</section>
+
+<!-- NEW bridge -->
+<section class="slide">
+  <div class="kicker">Ch3 → Ch5 ｜ 收購那天之後呢？</div>
+  <h1>為什麼每年都要重新沖一次？</h1>
+  <div class="card key" style="margin-bottom:14px"><p style="font-size:19px">因為工作底稿上的沖銷分錄<b>只寫在工作底稿</b>，不會記進母子公司自己的帳。母公司帳上永遠有「投資子公司」，子公司帳上永遠有自己的股本 → <b>每年都要從頭沖</b>。</p></div>
+  <table class="frag">
+    <tr><th></th><th>收購日（Ch3）</th><th>收購後的每一年（Ch5）</th></tr>
+    <tr><td>要編的報表</td><td>只有合併資產負債表</td><td>合併損益表、權益變動表、資產負債表</td></tr>
+    <tr><td>母公司投資帳戶</td><td>剛買，等於移轉對價</td><td>已經加了投資收益、減了股利</td></tr>
+    <tr><td>差額</td><td>分攤到資產負債與商譽</td><td>分攤之外，還要做<b>當年度攤銷</b></td></tr>
+    <tr><td>非控制權益</td><td>收購日的金額</td><td>＋ 每年分到的淨利 − 股利</td></tr>
+    <tr><td>沖銷分錄</td><td>沖投資、分攤差額、內部應收應付</td><td>多了：沖投資收益與股利、當年攤銷、NCI 淨利</td></tr>
+  </table>
+  <div class="foot"><span>引用 Wiki：<b>合併工作底稿十步驟</b>、<b>合併沖銷原則</b>｜講義 Ch3 p.2–6、Ch5 p.1–2</span><span class="pg"></span></div>
+</section>
+
+<!-- 10 Ch5 -->
+<section class="slide">
+  <div class="kicker">Ch5 ｜ 收購日之後，每一年都要合併</div>
+  <h1>合併工作底稿十步驟，其實是四個階段</h1>
+  <div class="phases">
+    <div class="ph frag"><div class="pt">A 先檢查</div><p>① 母公司有沒有完整用權益法？沒有就先調整</p><p>② 更正帳上錯誤</p><p>③ 沖銷母子公司間的交易</p></div>
+    <div class="ph frag"><div class="pt">B 沖銷投資</div><p>④ 沖投資收益和股利，投資帳戶<b>回到期初</b></p><p>⑤ 沖期初投資 vs. 子公司<b>期初</b>權益，列出 NCI 和未攤銷差額</p></div>
+    <div class="ph frag"><div class="pt">C 處理差額</div><p>⑥ 分攤期初未攤銷差額</p><p>⑦ 做當年度攤銷（存貨→銷貨成本、設備→折舊）</p></div>
+    <div class="ph frag"><div class="pt">D NCI 與收尾</div><p>⑧ 列出非控制權益淨利、沖 NCI 的股利</p><p>⑨ 沖其他相對科目</p><p>⑩ 算出合併欄</p></div>
+  </div>
+  <div class="card key frag" style="margin-top:16px">
+    <p style="font-size:18px">💡 核心觀念：把投資帳戶拆成<b>「期初餘額」</b>（對應子公司期初權益 → 資產負債表）和<b>「本期變動」</b>（對應子公司本期損益 → 損益表）分開沖。</p>
+  </div>
+  <div class="foot"><span>引用 Wiki：<b>合併工作底稿十步驟</b>｜講義 Ch5 p.1–2</span><span class="pg"></span></div>
+</section>
+
+<!-- 11 Ch5 worksheet -->
+<section class="slide ws-slide" data-max="6" style="padding-top:26px">
+  <div class="kicker">Ch5 ｜ 收購後第一年的工作底稿（持股 80%）</div>
+  <h1 style="font-size:26px;margin-bottom:6px">達欣公司與台啤公司 X3 年度：五組沖銷分錄</h1>
+  <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:20px;flex:1">
+    <table class="ws ws2 num">
+      <tr><th>科目</th><th>達欣</th><th>台啤</th><th>借</th><th>貸</th><th>合併</th></tr>
+      <tr data-r="4"><td>銷貨成本</td><td>(2,000,000)</td><td>(1,230,000)</td><td class="dr"><span class="cell" data-s="4">(4) 240,000</span></td><td></td><td class="c"><span class="cell" data-s="6">(3,470,000)</span></td></tr>
+      <tr data-r="4"><td>費用</td><td>(1,200,000)</td><td>(930,000)</td><td></td><td class="cr"><span class="cell" data-s="4">(4) 14,400</span></td><td class="c"><span class="cell" data-s="6">(2,115,600)</span></td></tr>
+      <tr data-r="1"><td>投資收益</td><td>779,520</td><td>—</td><td class="dr"><span class="cell" data-s="1">(1) 779,520</span></td><td></td><td class="c"><span class="cell" data-s="6">—</span></td></tr>
+      <tr data-r="5"><td>非控制權益淨利</td><td></td><td></td><td class="dr"><span class="cell" data-s="5">(5) 194,880</span></td><td></td><td class="c"><span class="cell" data-s="6">(194,880)</span></td></tr>
+      <tr class="total" data-r="6"><td>控制權益淨利</td><td>1,700,000</td><td></td><td></td><td></td><td class="c"><span class="cell" data-s="6">1,700,000</span></td></tr>
+      <tr data-r="2"><td>保留盈餘 1/1</td><td>500,000</td><td>240,000</td><td class="dr"><span class="cell" data-s="2">(2) 240,000</span></td><td></td><td class="c"><span class="cell" data-s="6">500,000</span></td></tr>
+      <tr data-r="1 5"><td>股利</td><td>(1,100,000)</td><td>(624,000)</td><td></td><td class="cr"><span class="cell" data-s="1">(1) 499,200</span><br><span class="cell" data-s="5">(5) 124,800</span></td><td class="c"><span class="cell" data-s="6">(1,100,000)</span></td></tr>
+      <tr data-r="3 4"><td>存貨</td><td>110,000</td><td>330,000</td><td class="dr"><span class="cell" data-s="3">(3) 240,000</span></td><td class="cr"><span class="cell" data-s="4">(4) 240,000</span></td><td class="c"><span class="cell" data-s="6">440,000</span></td></tr>
+      <tr data-r="3 4"><td>廠房及設備</td><td>725,680</td><td>384,000</td><td class="dr"><span class="cell" data-s="4">(4) 14,400</span></td><td class="cr"><span class="cell" data-s="3">(3) 144,000</span></td><td class="c"><span class="cell" data-s="6">980,080</span></td></tr>
+      <tr data-r="1 2"><td>投資台啤公司</td><td>1,380,320</td><td>—</td><td></td><td class="cr"><span class="cell" data-s="1">(1) 280,320</span><br><span class="cell" data-s="2">(2) 1,100,000</span></td><td class="c"><span class="cell" data-s="6">—</span></td></tr>
+      <tr data-r="2 3"><td>未攤銷差額</td><td></td><td></td><td class="dr"><span class="cell" data-s="2">(2) 270,000</span></td><td class="cr"><span class="cell" data-s="3">(3) 270,000</span></td><td class="c"><span class="cell" data-s="6">—</span></td></tr>
+      <tr data-r="3"><td>商譽</td><td></td><td></td><td class="dr"><span class="cell" data-s="3">(3) 174,000</span></td><td></td><td class="c"><span class="cell" data-s="6">174,000</span></td></tr>
+      <tr data-r="2"><td>股本</td><td>1,500,000</td><td>840,000</td><td class="dr"><span class="cell" data-s="2">(2) 840,000</span></td><td></td><td class="c"><span class="cell" data-s="6">1,500,000</span></td></tr>
+      <tr data-r="2 5"><td>非控制權益</td><td></td><td></td><td></td><td class="cr"><span class="cell" data-s="2">(2) 250,000</span><br><span class="cell" data-s="5">(5) 70,080</span></td><td class="c"><span class="cell" data-s="6">320,080</span></td></tr>
+    </table>
+    <div class="panel small">
+      <div class="ws-step" data-s="0"><b>題目</b>：達欣 X3 年初付 $1,100,000 買台啤 80%，NCI 公允價值 $250,000。台啤權益 $1,080,000；存貨低估 240,000（當年賣掉）、設備高估 144,000（10 年）。<br>差額 270,000 → 商譽 <b>174,000</b><br><span class="hint">按 → 看五組分錄；(1)–(5) 即第 14 張十步驟的 ④–⑧（未調整科目省略）</span></div>
+      <div class="ws-step" data-s="1"><b>(1) 沖投資收益＋母公司分到的股利</b><br>624,000 × 80% = 499,200；投資帳戶回到期初 1,100,000</div>
+      <div class="ws-step" data-s="2"><b>(2) 沖期初投資 vs. 台啤期初權益</b><br>列出期初 NCI 250,000、未攤銷差額 270,000</div>
+      <div class="ws-step" data-s="3"><b>(3) 分攤差額</b><br>存貨 +240,000、設備 −144,000、商譽 174,000</div>
+      <div class="ws-step" data-s="4"><b>(4) 當年攤銷</b><br>存貨賣掉 → 銷貨成本 +240,000<br>設備高估 → 折舊少提 144,000 ÷ 10 = 14,400</div>
+      <div class="ws-step" data-s="5"><b>(5) 非控制權益淨利</b><br>(1,200,000 − 240,000 + 14,400) × 20% = <b>194,880</b>；NCI 分到的股利 124,800</div>
+      <div class="ws-step" data-s="6"><b>完成 ✓</b> 控制權益淨利 <b>1,700,000 = 達欣自己的淨利</b><br>→ 證明達欣完整使用了權益法（Ch2）</div>
+    </div>
+  </div>
+  <div class="foot"><span>引用 Wiki：<b>合併工作底稿十步驟</b>（達欣公司例題）、<b>未攤銷差額</b>｜講義 Ch5 p.2</span><span class="pg"></span></div>
+</section>
+
+<!-- 12 Ch5 -->
+<section class="slide">
+  <div class="kicker">Ch5 ｜ 母公司沒用權益法怎麼辦</div>
+  <h1>先在工作底稿上「調整成權益法」，再照常沖銷</h1>
+  <p>例：可曉公司 X2 年初買藝曉 80%（沒有差額）。藝曉 X2：淨利 280,000、股利 220,000；X3：淨利 320,000、股利 350,000</p>
+  <div class="cols" style="margin-top:12px;grid-template-columns:1fr 1.05fr">
+    <table>
+      <tr><th>X3 年</th><th>成本法（帳上）</th><th>權益法（應有）</th></tr>
+      <tr><td>股利 350,000 × 80%</td><td>股利收入 280,000</td><td>投資帳戶 −280,000</td></tr>
+      <tr><td>淨利 320,000 × 80%</td><td>不認列</td><td>投資收益 256,000</td></tr>
+      <tr><td>投資帳戶 X3 年底</td><td class="num">500,000</td><td class="num">524,000</td></tr>
+    </table>
+    <div class="card key frag">
+      <h2>工作底稿調整分錄</h2>
+<pre style="font-size:15px">股利收入            280,000   ← 本期：沖掉
+投資藝曉公司         24,000
+    投資收益                 256,000   ← 本期：補認列
+    保留盈餘（1/1）           48,000   ← 前期差異</pre>
+      <p style="font-size:17px;margin-top:8px">前期差異 = X2 未分配淨利 (280,000 − 220,000) × 80% = 48,000</p>
+      <p class="hint">口訣：本期差異 → 投資收益；前期差異 → 期初保留盈餘</p>
+    </div>
+  </div>
+  <div class="foot"><span>引用 Wiki：<b>不完全權益法與成本法的調整</b>（可曉公司例題）｜講義 Ch5 p.3–5</span><span class="pg"></span></div>
+</section>
+
+<!-- 13 Ch4 -->
+<section class="slide">
+  <div class="kicker">Ch4 ｜ 延伸</div>
+  <h1>反向收購：看起來 A 買 B，其實是 B 買 A</h1>
+  <p>例：大大公司發行 8,000 股新股，吸收合併小小公司（大大存續）。合併後誰說了算？</p>
+  <div class="card frag" style="margin-top:14px">
+    <p><b>合併後大大公司共 10,000 股</b></p>
+    <div class="share"><div style="width:20%;background:var(--muted)">大大 2,000 股 20%</div><div style="width:80%;background:var(--accent)">小小原股東 8,000 股（80%）</div></div>
+  </div>
+  <div class="cols frag" style="margin-top:16px;gap:20px">
+    <div class="card"><h2>法律上</h2><p>大大是收購者、存續公司，報表用大大的名稱</p></div>
+    <div class="card key"><h2>會計上</h2><p><b>小小</b>的股東掌握控制 → 小小才是收購者。保留盈餘延續小小的；大大的資產負債改用公允價值。</p></div>
+  </div>
+  <p class="hint frag" style="margin-top:10px">📌 基本題不用想這麼多：除非題目是反向收購，出錢的一方就是收購者</p>
+  <div class="foot"><span>引用 Wiki：<b>反向收購</b>、<b>辨認收購者</b>｜講義 Ch1 p.3、Ch4 p.1–4</span><span class="pg"></span></div>
+</section>
+
+<!-- NEW mistakes -->
+<section class="slide">
+  <div class="kicker">複習 ｜ 最常犯的錯</div>
+  <h1>這 8 個錯，考試最容易踩到</h1>
+  <div class="mis">
+    <div class="m frag"><i>Ch1</i><s>律師費、會計師費加進商譽</s><b>→ 列當期費用</b></div>
+    <div class="m frag"><i>Ch1</i><s>發行股票用「面額」算對價</s><b>→ 用市價（公允價值）</b></div>
+    <div class="m frag"><i>Ch2</i><s>權益法下，子公司發股利當成母公司收入</s><b>→ 投資帳戶減少</b></div>
+    <div class="m frag"><i>Ch2</i><s>存貨「高估」還去減淨利</s><b>→ 高估代表成本多算，要加回</b></div>
+    <div class="m frag"><i>Ch3</i><s>子公司的股本、保留盈餘也加進合併報表</s><b>→ 全部沖掉</b></div>
+    <div class="m frag"><i>Ch3</i><s>合併損益表還列「投資收益」</s><b>→ 已被沖銷，不再出現</b></div>
+    <div class="m frag"><i>Ch5</i><s>子公司發的股利，全部跟投資收益一起沖掉</s><b>→ 母公司分到的 80% 跟「投資收益」一起沖；NCI 分到的 20% 跟「非控制權益淨利」一起沖（第 15 張分錄 (1)、(5)）</b></div>
+    <div class="m frag"><i>Ch5</i><s>成本法調整時，前期差異也放進投資收益</s><b>→ 前期差異進期初保留盈餘</b></div>
+  </div>
+  <div class="foot"><span>引用 Wiki：各頁「常見錯誤」段落（收購相關成本、移轉對價、投資會計三方法比較、未攤銷差額、合併沖銷原則、合併工作底稿十步驟、不完全權益法與成本法的調整）</span><span class="pg"></span></div>
+</section>
+
+<!-- 14 quiz -->
+<section class="slide" style="padding-top:36px">
+  <div class="kicker">小測驗 ＋ 總結</div>
+  <h1 style="font-size:28px;margin-bottom:10px">點選答案檢查看看</h1>
+  <div class="q" data-ans="b">
+    <p>Q1.（Ch1）收購時付給律師的 $3,600，要怎麼處理？</p>
+    <div class="opts"><button data-o="a">加進移轉對價</button><button data-o="b">列當期費用</button><button data-o="c">減少資本公積</button></div>
+    <div class="why">收購相關成本不算買價；律師費、會計師費列當期費用，只有股票發行成本才扣資本公積。</div>
+  </div>
+  <div class="q" data-ans="a">
+    <p>Q2.（Ch2）子公司的存貨在收購日被低估，當年全部賣掉。母公司算投資收益時要？</p>
+    <div class="opts"><button data-o="a">把低估數從子公司淨利扣掉</button><button data-o="b">把低估數加回子公司淨利</button><button data-o="c">不用調整</button></div>
+    <div class="why">存貨低估 → 子公司的銷貨成本少算 → 淨利多算，所以要扣掉。</div>
+  </div>
+  <div class="q" data-ans="c">
+    <p>Q3.（Ch3）合併資產負債表上的「普通股股本」是誰的？</p>
+    <div class="opts"><button data-o="a">母公司 + 子公司</button><button data-o="b">只有子公司的</button><button data-o="c">只有母公司的</button></div>
+    <div class="why">子公司的權益在沖銷時全部抵掉，合併權益 = 母公司權益 + 非控制權益。</div>
+  </div>
+  <div class="q" data-ans="b">
+    <p>Q4.（Ch5）持股 80%，子公司發股利 624,000，工作底稿上要怎麼沖？<span class="hint">（(1)、(5) 為第 15 張達欣例題的五組沖銷分錄編號）</span></p>
+    <div class="opts"><button data-o="a">全部跟投資收益一起沖（分錄 (1)）</button><button data-o="b">80% 跟投資收益一起沖（分錄 (1)），20% 跟 NCI 淨利一起沖（分錄 (5)）</button><button data-o="c">不用沖</button></div>
+    <div class="why">母公司分到的 499,200 沖投資帳戶；NCI 分到的 124,800 減少非控制權益。</div>
+  </div>
+  <div class="card key" style="padding:10px 20px">
+    <p style="font-size:17px"><b>總結：</b>① 取得控制就要合併（Ch1）② 母公司用權益法記投資，差額要攤銷（Ch2）③ 合併 = 內部沖銷、對外相加（Ch3）④ 每年用工作底稿五組分錄完成合併（Ch5）</p>
+  </div>
+  <div class="foot"><span>引用 Wiki：<b>收購相關成本</b>、<b>未攤銷差額</b>、<b>合併沖銷原則</b>、<b>合併工作底稿十步驟</b>｜講義 Ch1、Ch2、Ch3、Ch5</span><span class="pg"></span></div>
+</section>
+
+</div>
+<div id="nav"><button id="prev" aria-label="上一頁">←</button><span id="cnt"></span><button id="next" aria-label="下一頁">→</button></div>
+
+<script>
+const slides=[...document.querySelectorAll('.slide')];
+let cur=0;
+slides.forEach((s,i)=>{const p=s.querySelector('.pg');if(p)p.textContent=(i+1)+' / '+slides.length;});
+function fit(){const s=Math.min(innerWidth/1280,innerHeight/720)*0.96;document.getElementById('stage').style.transform=`translate(-50%,-50%) scale(${s})`;}
+addEventListener('resize',fit);fit();
+const frags=sl=>[...sl.querySelectorAll('.frag')];
+const isWS=sl=>sl.classList.contains('ws-slide');
+const wsMax=sl=>+sl.dataset.max;
+const wsState=sl=>+(sl.dataset.step||0);
+function setWS(sl,n){
+  sl.dataset.step=n;
+  sl.querySelectorAll('.cell').forEach(c=>c.classList.toggle('on',+c.dataset.s<=n));
+  sl.querySelectorAll('.ws-step').forEach(p=>{const s=+p.dataset.s;p.classList.toggle('on',s<=n);p.classList.toggle('cur',s===n);});
+  sl.querySelectorAll('tr[data-r]').forEach(r=>r.classList.toggle('lit',n>0&&r.dataset.r.split(' ').includes(String(n))&&(n<wsMax(sl)||r.classList.contains('total'))));
+}
+function show(i,all){
+  slides.forEach(s=>s.classList.remove('active'));
+  cur=Math.max(0,Math.min(slides.length-1,i));
+  const sl=slides[cur];sl.classList.add('active');
+  frags(sl).forEach(f=>f.classList.toggle('on',!!all));
+  if(isWS(sl))setWS(sl,all?wsMax(sl):0);
+  document.getElementById('bar').style.width=((cur+1)/slides.length*100)+'%';
+  document.getElementById('cnt').textContent=(cur+1)+' / '+slides.length;
+}
+function next(){
+  const sl=slides[cur];
+  if(isWS(sl)&&wsState(sl)<wsMax(sl)){setWS(sl,wsState(sl)+1);return;}
+  const f=frags(sl).find(x=>!x.classList.contains('on'));
+  if(f){f.classList.add('on');return;}
+  if(cur<slides.length-1)show(cur+1,false);
+}
+function prev(){if(cur>0)show(cur-1,true);}
+addEventListener('keydown',e=>{
+  if(['ArrowRight','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();next();}
+  else if(['ArrowLeft','PageUp','Backspace'].includes(e.key)){e.preventDefault();prev();}
+  else if(e.key==='Home')show(0,false);else if(e.key==='End')show(slides.length-1,true);
+});
+document.getElementById('next').onclick=next;document.getElementById('prev').onclick=prev;
+let tx=null;addEventListener('touchstart',e=>tx=e.touches[0].clientX);
+addEventListener('touchend',e=>{if(tx===null)return;const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)(d<0?next:prev)();tx=null;});
+document.querySelectorAll('.q').forEach(q=>{
+  q.querySelectorAll('button').forEach(b=>b.onclick=ev=>{ev.stopPropagation();
+    q.querySelectorAll('button').forEach(x=>x.classList.remove('right','wrong'));
+    b.classList.add(b.dataset.o===q.dataset.ans?'right':'wrong');
+    if(b.dataset.o===q.dataset.ans)q.querySelector('.why').classList.add('show');
+  });
+});
+show(0,false);
+</script>
+</body>
+</html>
